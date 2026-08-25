@@ -21,6 +21,7 @@ import {
   deleteLedgerLocal,
   saveSettingsLocal,
   getSettingsLocal,
+  migrateLocalGuestDataToUser,
   DEFAULT_SETTINGS,
 } from '../db/indexedDB';
 import { syncEngine } from '../services/syncEngine';
@@ -146,34 +147,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [theme, setThemeState] = useState<'dark' | 'light'>(() => {
     const saved = localStorage.getItem('hisab_theme');
     if (saved === 'light' || saved === 'dark') return saved;
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
     return 'dark';
   });
 
-  const setTheme = useCallback((newTheme: 'dark' | 'light') => {
-    setThemeState(newTheme);
-    localStorage.setItem('hisab_theme', newTheme);
+  const applyThemeToDOM = useCallback((newTheme: 'dark' | 'light') => {
+    if (typeof document === 'undefined') return;
     if (newTheme === 'dark') {
       document.documentElement.classList.add('dark');
       document.documentElement.classList.remove('light');
+      document.documentElement.style.colorScheme = 'dark';
+      const meta = document.getElementById('theme-color-meta');
+      if (meta) meta.setAttribute('content', '#020617');
     } else {
       document.documentElement.classList.remove('dark');
       document.documentElement.classList.add('light');
+      document.documentElement.style.colorScheme = 'light';
+      const meta = document.getElementById('theme-color-meta');
+      if (meta) meta.setAttribute('content', '#f8fafc');
     }
   }, []);
 
+  const setTheme = useCallback(
+    (newTheme: 'dark' | 'light') => {
+      setThemeState(newTheme);
+      localStorage.setItem('hisab_theme', newTheme);
+      applyThemeToDOM(newTheme);
+    },
+    [applyThemeToDOM]
+  );
+
   const toggleTheme = useCallback(() => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
   }, [theme, setTheme]);
 
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.classList.add('light');
-    }
-  }, [theme]);
+    applyThemeToDOM(theme);
+  }, [theme, applyThemeToDOM]);
 
   // Modal states
   const [isQuickAddOpen, setIsQuickAddOpen] = useState<boolean>(false);
@@ -259,6 +272,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await refreshLocalData();
 
       syncEngine.setUser(user);
+
+      if (user) {
+        // Automatically sync & restore all user records on boot
+        await syncEngine.performFullSync(user);
+        await refreshLocalData();
+      }
 
       unsubscribeSync = syncEngine.subscribe((status) => {
         setSyncStatus(status);
@@ -575,22 +594,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [refreshLocalData, showToast]);
 
   const setUserProfile = useCallback(
-    (u: UserProfile | null) => {
+    async (u: UserProfile | null) => {
       setUser(u);
       syncEngine.setUser(u);
-      refreshLocalData();
       if (u) {
-        showToast(`Welcome, ${u.name}! Connected to cloud.`, 'success');
+        // 1. Migrate any guest data created locally to this user
+        await migrateLocalGuestDataToUser(u.id);
+        // 2. Perform full sync and pull all cloud records
+        const result = await syncEngine.performFullSync(u);
+        await refreshLocalData();
+        const total = (result.pulledTxCount || 0) + (result.pulledLdgCount || 0);
+        if (total > 0) {
+          showToast(`Welcome back, ${u.name}! Restored ${total} records from cloud.`, 'success');
+        } else {
+          showToast(`Welcome, ${u.name}! Connected to cloud database.`, 'success');
+        }
+      } else {
+        await refreshLocalData();
       }
     },
     [refreshLocalData, showToast]
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     setUser(null);
     syncEngine.setUser(null);
+    await refreshLocalData();
     showToast('Logged out of cloud account (local offline mode)', 'info');
-  }, [showToast]);
+  }, [refreshLocalData, showToast]);
 
   const openQuickAdd = useCallback((initialText: string = '') => {
     setQuickAddInitialText(initialText);

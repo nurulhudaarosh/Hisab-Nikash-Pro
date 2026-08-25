@@ -229,17 +229,14 @@ const MainAppContent: React.FC = () => {
               <CategoryVisualizer />
             </div>
 
-            {/* Bento Grid Bottom Section: Two-Way Ledger + Recent Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              {/* Bento Card 4: Dena-Paona Ledger Active List (5 cols) */}
-              <div className="lg:col-span-5 flex flex-col">
-                <TwoWayLedgerSection />
-              </div>
+            {/* Bento Grid Section: Two-Way Ledger */}
+            <div className="w-full">
+              <TwoWayLedgerSection />
+            </div>
 
-              {/* Bento Card 5: Recent Transactions & Activity (7 cols) */}
-              <div className="lg:col-span-7 flex flex-col">
-                <ActivityAndNotes />
-              </div>
+            {/* Bento Grid Section: Recent Transactions & Activity */}
+            <div className="w-full">
+              <ActivityAndNotes />
             </div>
           </div>
         )}

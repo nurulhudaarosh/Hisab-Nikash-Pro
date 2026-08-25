@@ -507,6 +507,63 @@ export async function mergeIncomingData(
   }
 }
 
+// Migrate any guest 'local_user' data to the authenticated user account
+export async function migrateLocalGuestDataToUser(targetUserId: string): Promise<number> {
+  if (!targetUserId || targetUserId === 'local_user') return 0;
+
+  try {
+    const guestTx = await db.transactions.where('userId').equals('local_user').toArray();
+    const guestLdg = await db.ledgers.where('userId').equals('local_user').toArray();
+    const guestSettings = await db.settings.get('local_user');
+
+    // Only non-seed transactions
+    const realGuestTx = guestTx.filter((t) => !t.id.startsWith('tx_seed_'));
+    const realGuestLdg = guestLdg.filter((l) => !l.id.startsWith('ldg_seed_'));
+
+    let migratedCount = 0;
+
+    if (realGuestTx.length > 0) {
+      const updatedTx = realGuestTx.map((t) => ({
+        ...t,
+        userId: targetUserId,
+        synced: false,
+        updatedAt: new Date().toISOString(),
+      }));
+      await db.transactions.bulkPut(updatedTx);
+      migratedCount += updatedTx.length;
+    }
+
+    if (realGuestLdg.length > 0) {
+      const updatedLdg = realGuestLdg.map((l) => ({
+        ...l,
+        userId: targetUserId,
+        synced: false,
+        updatedAt: new Date().toISOString(),
+      }));
+      await db.ledgers.bulkPut(updatedLdg);
+      migratedCount += updatedLdg.length;
+    }
+
+    if (guestSettings) {
+      await db.settings.put({
+        ...guestSettings,
+        userId: targetUserId,
+        synced: false,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    // Clean up local_user entries
+    await db.transactions.where('userId').equals('local_user').delete();
+    await db.ledgers.where('userId').equals('local_user').delete();
+
+    return migratedCount;
+  } catch (err) {
+    console.warn('Migration from local guest data failed:', err);
+    return 0;
+  }
+}
+
 // Backup & Restore
 export async function exportDatabaseBackup(): Promise<string> {
   const transactions = await db.transactions.toArray();

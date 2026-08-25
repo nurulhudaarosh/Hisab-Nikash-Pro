@@ -13,6 +13,8 @@ import {
   CheckCircle2,
   Trash2,
   AlertTriangle,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { exportDatabaseBackup, importDatabaseBackup, seedInitialDataIfNeeded, db } from '../db/indexedDB';
@@ -27,6 +29,8 @@ export const SettingsModal: React.FC = () => {
     syncStatus,
     syncNow,
     showToast,
+    theme,
+    setTheme,
   } = useApp();
 
   const [dailyLimit, setDailyLimit] = useState<number>(settings.dailyExpenseLimit || 150);
@@ -163,6 +167,40 @@ export const SettingsModal: React.FC = () => {
                 <option value="€">€ (EUR - Euro)</option>
                 <option value="£">£ (GBP - Pound)</option>
               </select>
+            </div>
+          </div>
+
+          {/* Theme Selector */}
+          <div>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+              App Appearance (থিম মোড)
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setTheme('dark')}
+                className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+                  theme === 'dark'
+                    ? 'bg-slate-900 border-emerald-500 text-emerald-400 shadow-sm ring-1 ring-emerald-500/50'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
+                }`}
+              >
+                <Moon className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Dark Mode</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTheme('light')}
+                className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+                  theme === 'light'
+                    ? 'bg-white border-emerald-500 text-emerald-600 shadow-sm ring-1 ring-emerald-500/50'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
+                }`}
+              >
+                <Sun className="w-3.5 h-3.5 text-amber-500" />
+                <span>Light Mode</span>
+              </button>
             </div>
           </div>
 

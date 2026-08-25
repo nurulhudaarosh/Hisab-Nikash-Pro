@@ -22,7 +22,7 @@ export const BottomNav: React.FC = () => {
   return (
     <div
       id="bottom-navigation-bar"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800/80 px-2 py-1.5 sm:hidden shadow-lg dark:shadow-none"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800/80 px-3 pt-1 pb-[max(env(safe-area-inset-bottom,0px),0.5rem)] sm:hidden shadow-lg dark:shadow-none transition-all"
     >
       <div className="max-w-md mx-auto flex items-center justify-around relative">
         {/* First 2 items */}
@@ -32,7 +32,7 @@ export const BottomNav: React.FC = () => {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col items-center justify-center w-16 py-1 transition-all min-h-[44px] cursor-pointer ${
+              className={`flex flex-col items-center justify-center w-16 py-0.5 transition-all min-h-[42px] cursor-pointer ${
                 isActive
                   ? 'text-emerald-600 dark:text-emerald-400 font-bold'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -44,20 +44,20 @@ export const BottomNav: React.FC = () => {
                   <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-emerald-500" />
                 )}
               </div>
-              <span className="text-[10px] mt-1 tracking-tight">{item.label}</span>
+              <span className="text-[10px] mt-0.5 tracking-tight">{item.label}</span>
             </button>
           );
         })}
 
         {/* Center Prominent (+) Quick Add Trigger */}
-        <div className="relative -top-5">
+        <div className="relative -top-3.5">
           <button
             id="center-quick-add-btn"
             onClick={() => openQuickAdd()}
             aria-label="Add Expense or Note"
-            className="w-12 h-12 rounded-full bg-emerald-500 hover:bg-emerald-400 active:scale-90 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/30 border-4 border-white dark:border-slate-950 transition-all hover:scale-105 cursor-pointer"
+            className="w-11 h-11 rounded-full bg-emerald-500 hover:bg-emerald-400 active:scale-90 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/30 border-[3px] border-white dark:border-slate-950 transition-all hover:scale-105 cursor-pointer"
           >
-            <Plus className="w-6 h-6 stroke-[3]" />
+            <Plus className="w-5 h-5 stroke-[3]" />
           </button>
         </div>
 
@@ -68,7 +68,7 @@ export const BottomNav: React.FC = () => {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col items-center justify-center w-16 py-1 transition-all min-h-[44px] cursor-pointer ${
+              className={`flex flex-col items-center justify-center w-16 py-0.5 transition-all min-h-[42px] cursor-pointer ${
                 isActive
                   ? 'text-emerald-600 dark:text-emerald-400 font-bold'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -80,7 +80,7 @@ export const BottomNav: React.FC = () => {
                   <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-emerald-500" />
                 )}
               </div>
-              <span className="text-[10px] mt-1 tracking-tight">{item.label}</span>
+              <span className="text-[10px] mt-0.5 tracking-tight">{item.label}</span>
             </button>
           );
         })}

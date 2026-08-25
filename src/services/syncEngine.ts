@@ -33,15 +33,107 @@ class SyncEngine {
   }
 
   public setUser(user: UserProfile | null) {
+    const isNewUser = user?.id !== this.currentUser?.id;
     this.currentUser = user;
     if (user?.token) {
       localStorage.setItem('hisab_auth_token', user.token);
       localStorage.setItem('hisab_auth_user', JSON.stringify(user));
+      if (isNewUser) {
+        this.lastSyncedAt = null;
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('hisab_last_synced_at');
+        }
+      }
     } else if (!user) {
       localStorage.removeItem('hisab_auth_token');
       localStorage.removeItem('hisab_auth_user');
+      this.lastSyncedAt = null;
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('hisab_last_synced_at');
+      }
     }
     this.notify();
+  }
+
+  public async performFullSync(user?: UserProfile | null): Promise<{ success: boolean; pulledTxCount: number; pulledLdgCount: number }> {
+    const activeUser = user || this.currentUser;
+    if (!activeUser?.token && !activeUser?.id) {
+      return { success: false, pulledTxCount: 0, pulledLdgCount: 0 };
+    }
+
+    this.isSyncing = true;
+    this.syncError = null;
+    this.notify();
+
+    try {
+      const userId = activeUser.id;
+      const token = activeUser.token || localStorage.getItem('hisab_auth_token');
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-user-id': userId,
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      // 1. Push any local unsynced data first
+      const unsynced = await getUnsyncedData(userId);
+      if (unsynced.transactions.length > 0 || unsynced.ledgers.length > 0 || unsynced.settings) {
+        const pushRes = await fetch('/api/sync/push', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            transactions: unsynced.transactions,
+            ledgers: unsynced.ledgers,
+            settings: unsynced.settings,
+          }),
+        });
+        if (pushRes.ok) {
+          const txIds = unsynced.transactions.map((t) => t.id);
+          const ldgIds = unsynced.ledgers.map((l) => l.id);
+          await markAsSynced(txIds, ldgIds, unsynced.settings?.userId);
+        }
+      }
+
+      // 2. Full Pull: Download ALL cloud records for this user (since is omitted)
+      const pullRes = await fetch('/api/sync/pull', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ since: undefined }),
+      });
+
+      let pulledTx = 0;
+      let pulledLdg = 0;
+
+      const pullContentType = pullRes.headers.get('content-type') || '';
+      if (pullRes.ok && pullContentType.includes('application/json')) {
+        const pullData = await pullRes.json().catch(() => null);
+        if (pullData?.success) {
+          pulledTx = pullData.transactions?.length || 0;
+          pulledLdg = pullData.ledgers?.length || 0;
+          await mergeIncomingData(pullData.transactions || [], pullData.ledgers || [], pullData.settings);
+        }
+      }
+
+      const nowIso = new Date().toISOString();
+      this.lastSyncedAt = nowIso;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('hisab_last_synced_at', nowIso);
+      }
+
+      this.isSyncing = false;
+      this.syncError = null;
+      this.notify();
+
+      return { success: true, pulledTxCount: pulledTx, pulledLdgCount: pulledLdg };
+    } catch (err: any) {
+      console.warn('Full sync error:', err);
+      this.isSyncing = false;
+      this.syncError = err.message || 'Sync failed';
+      this.notify();
+      return { success: false, pulledTxCount: 0, pulledLdgCount: 0 };
+    }
   }
 
   public getCachedUser(): UserProfile | null {

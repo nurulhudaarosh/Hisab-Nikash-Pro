@@ -241,7 +241,7 @@ export const ActivityAndNotes: React.FC = () => {
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">No activity matching your filter.</p>
           </div>
         ) : (
-          <div className="space-y-2 pt-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
             {filtered.map((tx) => {
               const isExpense = tx.type === 'expense';
               const isIncome = tx.type === 'income';
