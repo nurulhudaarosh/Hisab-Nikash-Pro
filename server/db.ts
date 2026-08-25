@@ -71,7 +71,7 @@ export async function initDatabase(): Promise<{ isConnected: boolean; type: stri
       return { isConnected: false, type: 'fallback_storage' };
     }
   } else {
-    console.log('Operating in durable server-storage engine mode.');
+    console.log('Operating in durable server-storage engine mode with file persistence.');
     return { isConnected: true, type: 'fallback_storage' };
   }
 }

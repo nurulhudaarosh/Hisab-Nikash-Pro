@@ -66,19 +66,19 @@ class SyncEngine {
     this.notify();
 
     try {
-      const userId = activeUser.id;
-      const token = activeUser.token || localStorage.getItem('hisab_auth_token');
+      const currentUserId = activeUser.id;
+      const token = activeUser.token || (typeof window !== 'undefined' ? localStorage.getItem('hisab_auth_token') : null);
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'x-user-id': userId,
+        'x-user-id': currentUserId,
       };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      // 1. Push any local unsynced data first
-      const unsynced = await getUnsyncedData(userId);
+      // 1. Push any local unsynced data first (pass activeUser.id)
+      const unsynced = await getUnsyncedData(currentUserId);
       if (unsynced.transactions.length > 0 || unsynced.ledgers.length > 0 || unsynced.settings) {
         const pushRes = await fetch('/api/sync/push', {
           method: 'POST',
@@ -92,7 +92,7 @@ class SyncEngine {
         if (pushRes.ok) {
           const txIds = unsynced.transactions.map((t) => t.id);
           const ldgIds = unsynced.ledgers.map((l) => l.id);
-          await markAsSynced(txIds, ldgIds, unsynced.settings?.userId);
+          await markAsSynced(txIds, ldgIds, unsynced.settings?.userId || currentUserId);
         }
       }
 
@@ -191,10 +191,10 @@ class SyncEngine {
 
     try {
       const userId = this.currentUser?.id || 'guest_offline_user';
-      const token = this.currentUser?.token || localStorage.getItem('hisab_auth_token');
+      const token = this.currentUser?.token || (typeof window !== 'undefined' ? localStorage.getItem('hisab_auth_token') : null);
 
-      // 1. Gather all unsynced local data
-      const unsynced = await getUnsyncedData();
+      // 1. Gather all unsynced local data for this user
+      const unsynced = await getUnsyncedData(this.currentUser?.id);
       const txCount = unsynced.transactions.length;
       const ldgCount = unsynced.ledgers.length;
       const totalToPush = txCount + ldgCount + (unsynced.settings ? 1 : 0);

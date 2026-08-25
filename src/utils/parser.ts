@@ -64,6 +64,13 @@ const RULES: KeywordRule[] = [
     type: 'income',
     affectsDailyLimit: false,
   },
+  // Borrow / Loan received (Cash inflow from friend / loan)
+  {
+    keywords: ['dhar nilam', 'dhar pelam', 'borrowed', 'loan received', 'karja', 'korjo', 'dhar neoa'],
+    category: 'salary',
+    type: 'income',
+    affectsDailyLimit: false,
+  },
 ];
 
 export function parseQuickInput(input: string): ParsedShorthand {
