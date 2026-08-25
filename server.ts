@@ -1,6 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
 import path from "path";
-import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { createServer as createViteServer } from "vite";
@@ -9,8 +8,8 @@ import { initDatabase, dbService } from "./server/db.js";
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Safe directory path for both ESM and bundled CommonJS
+const currentDir = typeof __dirname !== "undefined" ? __dirname : process.cwd();
 
 const app = express();
 const PORT = 3000;

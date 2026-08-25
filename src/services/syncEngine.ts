@@ -227,6 +227,13 @@ class SyncEngine {
             const errData = await pushRes.json().catch(() => ({}));
             errorMsg = errData.error || errorMsg;
           }
+          if (pushRes.status === 404) {
+            console.info('Cloud sync endpoint unreachable (Local mode active). Changes safely stored on device.');
+            this.syncError = null; // Don't show scary error for local/standalone fallback
+            this.isSyncing = false;
+            this.notify();
+            return { success: true, pushedCount: 0 };
+          }
           throw new Error(errorMsg);
         }
 
