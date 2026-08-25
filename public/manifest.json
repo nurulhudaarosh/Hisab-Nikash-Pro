@@ -1,0 +1,18 @@
+{
+  "name": "Hisab - Offline Utility & Ledger PWA",
+  "short_name": "Hisab",
+  "description": "Mobile-first offline Personal Expense, Note, and Dena-Paona Ledger Tracker with bidirectional cloud sync.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

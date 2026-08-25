@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Anek Bangla', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+  
+  /* Smooth scroll and mobile touch optimizations */
+  html {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
+.font-bangla {
+  font-family: 'Anek Bangla', sans-serif;
+}
+

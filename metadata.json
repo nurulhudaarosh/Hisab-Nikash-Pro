@@ -1,0 +1,6 @@
+{
+  "name": "Hisab - Utility, Expense & Ledger Tracker",
+  "description": "Mobile-first offline PWA with Dexie.js IndexedDB, two-way Dena-Paona ledger, daily goal tracking, quick notes, and cloud sync.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
