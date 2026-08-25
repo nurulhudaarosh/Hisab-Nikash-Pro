@@ -114,14 +114,14 @@ export const RepaymentModal: React.FC = () => {
               setMode('repay');
               setAmount('');
             }}
-            className={`py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer font-bangla ${
               mode === 'repay'
                 ? 'bg-emerald-500 text-slate-950 shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            Payment / Repay (পরিশোধ)
+            <span>Payment / Repay (পরিশোধ)</span>
           </button>
           <button
             type="button"
@@ -131,14 +131,14 @@ export const RepaymentModal: React.FC = () => {
               // If it's a shop, default to goods on credit; if friend, default to cash
               setIsCashHandled(!isShop);
             }}
-            className={`py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer font-bangla ${
               mode === 'add_due'
                 ? 'bg-indigo-600 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Plus className="w-3.5 h-3.5" />
-            Add More Due (বাকী/ধার যোগ)
+            <span>Add More Due (বাকী/ধার যোগ)</span>
           </button>
         </div>
 

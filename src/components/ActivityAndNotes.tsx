@@ -111,11 +111,11 @@ export const ActivityAndNotes: React.FC = () => {
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm dark:shadow-xl space-y-4 hover:border-slate-300 dark:hover:border-slate-700/80 transition-all">
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/80">
           <div>
-            <h3 className="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1.5">
+            <h3 className="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1.5 font-bangla">
               <span className="w-2 h-2 rounded-full bg-cyan-500" />
-              Activity & Notes Log (দৈনিক খরচ ও নোট)
+              Activity & Notes Log <span className="bangla-highlight-cyan font-bold">(দৈনিক খরচ ও নোট)</span>
             </h3>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+            <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium font-bangla">
               Live transaction records, voice notes & tags
             </span>
           </div>

@@ -36,11 +36,11 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
         </div>
 
         {/* Text */}
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 font-bangla">
           <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
             {title}
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
             {description}
           </p>
 
@@ -52,7 +52,7 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
         </div>
 
         {/* Buttons */}
-        <div className="grid grid-cols-2 gap-2.5 pt-2">
+        <div className="grid grid-cols-2 gap-2.5 pt-2 font-bangla">
           <button
             type="button"
             onClick={onClose}

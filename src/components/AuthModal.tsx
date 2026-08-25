@@ -139,13 +139,13 @@ export const AuthModal: React.FC = () => {
                   setMode('login');
                   setError(null);
                 }}
-                className={`py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                className={`py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 font-bangla ${
                   mode === 'login'
                     ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-slate-200 dark:border-slate-700'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Sign In (লগইন)
+                Sign In <span className="bangla-highlight-emerald font-bold">(লগইন)</span>
               </button>
               <button
                 type="button"
@@ -153,14 +153,14 @@ export const AuthModal: React.FC = () => {
                   setMode('register');
                   setError(null);
                 }}
-                className={`py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                className={`py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 font-bangla ${
                   mode === 'register'
                     ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-slate-200 dark:border-slate-700'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-                Create Account (অ্যাকাউন্ট)
+                Create Account <span className="bangla-highlight-indigo font-bold">(অ্যাকাউন্ট)</span>
               </button>
             </div>
 

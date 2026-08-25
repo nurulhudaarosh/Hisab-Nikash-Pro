@@ -11,7 +11,10 @@
 
 @layer base {
   body {
-    font-family: 'Anek Bangla', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Hind Siliguri', 'Anek Bangla', 'Noto Sans Bengali', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   /* Smooth scroll and mobile touch optimizations */
@@ -29,7 +32,52 @@
   padding-bottom: max(0.5rem, calc(env(safe-area-inset-bottom, 0px) + 0.35rem));
 }
 
+/* Bangla Typography & Vibrant Harmonic Color System */
 .font-bangla {
-  font-family: 'Anek Bangla', sans-serif;
+  font-family: 'Hind Siliguri', 'Anek Bangla', 'Noto Sans Bengali', system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  line-height: 1.55;
+}
+
+/* Custom Bangla Text Highlights */
+.bangla-title {
+  font-family: 'Hind Siliguri', 'Anek Bangla', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.bangla-highlight-emerald {
+  color: #059669;
+}
+:is(.dark .bangla-highlight-emerald) {
+  color: #34d399;
+}
+
+.bangla-highlight-rose {
+  color: #e11d48;
+}
+:is(.dark .bangla-highlight-rose) {
+  color: #fb7185;
+}
+
+.bangla-highlight-amber {
+  color: #d97706;
+}
+:is(.dark .bangla-highlight-amber) {
+  color: #fbbf24;
+}
+
+.bangla-highlight-indigo {
+  color: #4f46e5;
+}
+:is(.dark .bangla-highlight-indigo) {
+  color: #818cf8;
+}
+
+.bangla-highlight-cyan {
+  color: #0891b2;
+}
+:is(.dark .bangla-highlight-cyan) {
+  color: #22d3ee;
 }
 

@@ -75,10 +75,10 @@ const MainAppContent: React.FC = () => {
                     • 100% Offline-First Enabled
                   </span>
                 </div>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-                  লগইন অথবা অ্যাকাউন্ট তৈরি করুন (Sign In & Sync Everywhere)
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight font-bangla">
+                  লগইন অথবা অ্যাকাউন্ট তৈরি করুন <span className="text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-300 font-sans">(Sign In & Sync Everywhere)</span>
                 </h2>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p className="text-xs sm:text-[13px] text-slate-700 dark:text-slate-200 leading-relaxed font-bangla">
                   অ্যাকাউন্ট খুললে আপনার হিসাব, দেনা-পাওনা ও ভাউচার সুরক্ষিত থাকবে এবং মোবাইল বা কম্পিউটারে স্বয়ংক্রিয়ভাবে সিন্ক হবে।
                 </p>
 

@@ -39,14 +39,28 @@ export const NetPositionWidget: React.FC = () => {
       {/* Top Header with Mode Selector */}
       <div className="flex justify-between items-start mb-2">
         <div>
-          <h2 className="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1.5">
+          <h2 className="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1.5 font-bangla">
             <span className={`w-2 h-2 rounded-full ${viewMode === 'cash' ? 'bg-emerald-500' : 'bg-indigo-500'} animate-pulse`} />
-            {viewMode === 'cash' ? 'Current Balance (বর্তমান নগদ টাকা)' : 'Net Position (সর্বমোট স্থিতি)'}
+            {viewMode === 'cash' ? (
+              <span>
+                Current Balance <span className="bangla-highlight-emerald font-bold">(বর্তমান নগদ টাকা)</span>
+              </span>
+            ) : (
+              <span>
+                Net Position <span className="bangla-highlight-indigo font-bold">(সর্বমোট স্থিতি)</span>
+              </span>
+            )}
           </h2>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-            {viewMode === 'cash'
-              ? 'Physical In-Hand Cash (পকেট ও ওয়ালেটে থাকা টাকা)'
-              : 'Cash + Paona − Dena (দেনা-পাওনা সমন্বিত হিসাব)'}
+          <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium font-bangla">
+            {viewMode === 'cash' ? (
+              <>
+                Physical In-Hand Cash <span className="text-slate-700 dark:text-slate-200 font-semibold">(পকেট ও ওয়ালেটে থাকা টাকা)</span>
+              </>
+            ) : (
+              <>
+                Cash + Paona − Dena <span className="text-slate-700 dark:text-slate-200 font-semibold">(দেনা-পাওনা সমন্বিত হিসাব)</span>
+              </>
+            )}
           </span>
         </div>
 
@@ -86,10 +100,10 @@ export const NetPositionWidget: React.FC = () => {
             {viewMode === 'cash' ? 'In-Hand Cash Balance' : 'Overall Net Worth'}
           </span>
           <span
-            className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold border transition-colors ${
+            className={`text-[11px] px-2.5 py-0.5 rounded-full font-bangla font-bold border transition-colors ${
               (viewMode === 'cash' ? isCashPositive : isNetPositive)
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
-                : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30'
+                : 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30'
             }`}
           >
             {(viewMode === 'cash' ? isCashPositive : isNetPositive)
@@ -118,9 +132,9 @@ export const NetPositionWidget: React.FC = () => {
         </div>
 
         {viewMode === 'cash' ? (
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-emerald-500 shrink-0" />
-            ধার বাবদ নগদ প্রাপ্ত টাকা যোগ হয়েছে ও যাবতীয় খরচ বাদ দেওয়া হয়েছে
+          <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 font-medium font-bangla flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>ধার বাবদ নগদ প্রাপ্ত টাকা যোগ হয়েছে ও যাবতীয় খরচ বাদ দেওয়া হয়েছে</span>
           </p>
         ) : (
           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-mono font-medium">
@@ -138,15 +152,15 @@ export const NetPositionWidget: React.FC = () => {
           className="bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 hover:border-rose-400 dark:hover:border-rose-700/80 rounded-2xl p-3 text-left transition-all hover:scale-[1.02] cursor-pointer group shadow-sm"
         >
           <div className="flex items-center justify-between text-rose-600 dark:text-rose-400 mb-1">
-            <span className="text-[11px] uppercase font-extrabold tracking-wide flex items-center gap-1">
+            <span className="text-[11px] uppercase font-extrabold tracking-wide flex items-center gap-1 font-bangla">
               <ArrowDownLeft className="w-3.5 h-3.5" />
-              Have to Pay (দিতে হবে)
+              Have to Pay <span className="bangla-highlight-rose font-bold">(দিতে হবে)</span>
             </span>
           </div>
           <p className="text-base sm:text-lg font-black font-mono text-rose-700 dark:text-rose-300 truncate">
             {formatCurrency(totalDena, settings.currency, isPrivacyMasked)}
           </p>
-          <p className="text-[10px] text-rose-600/80 dark:text-rose-400/80 truncate font-semibold mt-0.5">
+          <p className="text-[11px] text-rose-700 dark:text-rose-300 truncate font-semibold font-bangla mt-0.5">
             দোকান ও বন্ধুর ঋণ (Dena)
           </p>
         </button>
@@ -158,15 +172,15 @@ export const NetPositionWidget: React.FC = () => {
           className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 hover:border-emerald-400 dark:hover:border-emerald-700/80 rounded-2xl p-3 text-left transition-all hover:scale-[1.02] cursor-pointer group shadow-sm"
         >
           <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 mb-1">
-            <span className="text-[11px] uppercase font-extrabold tracking-wide flex items-center gap-1">
+            <span className="text-[11px] uppercase font-extrabold tracking-wide flex items-center gap-1 font-bangla">
               <ArrowUpRight className="w-3.5 h-3.5" />
-              I will Receive (পাবো)
+              I will Receive <span className="bangla-highlight-emerald font-bold">(পাবো)</span>
             </span>
           </div>
           <p className="text-base sm:text-lg font-black font-mono text-emerald-700 dark:text-emerald-300 truncate">
             {formatCurrency(totalPaona, settings.currency, isPrivacyMasked)}
           </p>
-          <p className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 truncate font-semibold mt-0.5">
+          <p className="text-[11px] text-emerald-700 dark:text-emerald-300 truncate font-semibold font-bangla mt-0.5">
             পাওনা টাকা (Paona)
           </p>
         </button>

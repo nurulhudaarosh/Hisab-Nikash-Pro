@@ -108,11 +108,11 @@ export const TwoWayLedgerSection: React.FC = () => {
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm dark:shadow-xl space-y-4 hover:border-slate-300 dark:hover:border-slate-700/80 transition-all">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800/80">
           <div>
-            <h3 className="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1.5">
+            <h3 className="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1.5 font-bangla">
               <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-              Bilateral Dena-Paona (দোকান ও বন্ধুদের দেনা-পাওনা খাতা)
+              Bilateral Dena-Paona <span className="bangla-highlight-indigo font-bold">(দোকান ও বন্ধুদের দেনা-পাওনা খাতা)</span>
             </h3>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+            <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium font-bangla">
               Multi-transaction customer, shop baki & personal loan ledger
             </span>
           </div>
@@ -125,7 +125,7 @@ export const TwoWayLedgerSection: React.FC = () => {
               if (ledgers.length > 0) setSelectedExistingId(ledgers[0].id);
               setIsAddModalOpen(true);
             }}
-            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-all shadow-sm shadow-emerald-500/20 hover:scale-105 active:scale-95 self-start sm:self-auto cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-all shadow-sm shadow-emerald-500/20 hover:scale-105 active:scale-95 self-start sm:self-auto cursor-pointer font-bangla"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>+ Add Due / Contact (নতুন বাকী/খাতা)</span>
@@ -364,8 +364,8 @@ export const TwoWayLedgerSection: React.FC = () => {
                   {/* Expanded Transaction Timeline */}
                   {isExpanded && ledger.history && ledger.history.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
-                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-slate-400" /> Timeline (লেনদেন হিস্ট্রি):
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1 font-bangla">
+                        <Clock className="w-3 h-3 text-slate-400" /> Timeline <span className="bangla-highlight-indigo font-bold">(লেনদেন হিস্ট্রি)</span>:
                       </span>
                       <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                         {ledger.history.map((h, idx) => {
@@ -393,17 +393,23 @@ export const TwoWayLedgerSection: React.FC = () => {
                                       {isRepay ? '−' : '+'}
                                       {formatCurrency(h.amount, settings.currency, isPrivacyMasked)}
                                     </span>
-                                    <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+                                    <span
+                                      className={`text-[10px] px-2 py-0.5 rounded-md font-bold font-bangla shrink-0 ${
+                                        isRepay
+                                          ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                          : 'bg-rose-100 dark:bg-rose-950/70 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                                      }`}
+                                    >
                                       {isRepay ? 'পরিশোধ' : 'বাকী/ধার'}
                                     </span>
                                     {h.isCashHandled && (
-                                      <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-mono shrink-0">
+                                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold font-bangla shrink-0">
                                         (নগদ)
                                       </span>
                                     )}
                                   </div>
                                   {h.note && (
-                                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                                    <p className="text-xs text-slate-600 dark:text-slate-300 font-bangla truncate mt-0.5">
                                       {h.note}
                                     </p>
                                   )}
@@ -625,7 +631,7 @@ export const TwoWayLedgerSection: React.FC = () => {
                 const activeContact = activeLedger ? activeLedger.contactType : newContactType;
 
                 return (
-                  <div className="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200 dark:border-emerald-900/50">
+                  <div className="p-3.5 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200 dark:border-emerald-900/50">
                     <label className="flex items-start gap-2.5 cursor-pointer">
                       <input
                         type="checkbox"
@@ -633,25 +639,25 @@ export const TwoWayLedgerSection: React.FC = () => {
                         onChange={(e) => setNewIsCashHandled(e.target.checked)}
                         className="w-4 h-4 mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 cursor-pointer shrink-0"
                       />
-                      <div className="text-xs space-y-0.5">
+                      <div className="text-xs space-y-1 font-bangla">
                         <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1">
                           <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          Physical Cash in Hand (হাতে নগদ টাকা এসেছে কি না?)
+                          Physical Cash in Hand <span className="bangla-highlight-emerald font-bold">(হাতে নগদ টাকা এসেছে কি না?)</span>
                         </span>
-                        <span className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug block">
+                        <span className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed block">
                           {newIsCashHandled ? (
                             activeType === 'i_owe' ? (
-                              <span className="text-emerald-700 dark:text-emerald-300 font-medium">
-                                ✓ ধার বাবদ নগদ টাকা আপনার হাতে এসেছে — ড্যাশবোর্ডে <strong>'In-Hand Cash' (নগদ টাকা) বৃদ্ধি পাবে</strong> (+ক্যাশ)। পরবর্তীতে এই টাকা থেকে খরচ করলে মানিব্যাগ থেকে কমবে।
+                              <span className="text-emerald-800 dark:text-emerald-300 font-medium">
+                                ✓ ধার বাবদ নগদ টাকা আপনার হাতে এসেছে — ড্যাশবোর্ডে <strong className="font-bold text-emerald-900 dark:text-emerald-200">'In-Hand Cash' (নগদ টাকা) বৃদ্ধি পাবে</strong> (+ক্যাশ)। পরবর্তীতে এই টাকা থেকে খরচ করলে মানিব্যাগ থেকে কমবে।
                               </span>
                             ) : (
-                              <span className="text-indigo-700 dark:text-indigo-300 font-medium">
+                              <span className="text-indigo-800 dark:text-indigo-300 font-medium">
                                 ✓ নিজের পকেট/ক্যাশ থেকে ধার দেওয়া হয়েছে — আপনার নগদ ক্যাশ ব্যালেন্স থেকে কর্তন হবে।
                               </span>
                             )
                           ) : (
-                            <span className="text-slate-600 dark:text-slate-300 font-medium">
-                              ✓ দোকান থেকে বাকীতে সওদা নেওয়া হয়েছে — <strong>পকেটের নগদ ক্যাশ ব্যালেন্স পরিবর্তন হবে না</strong>, শুধুমাত্র দেনা (Have to Pay) হিসেবে হিসাব থাকবে।
+                            <span className="text-slate-700 dark:text-slate-300 font-medium">
+                              ✓ দোকান থেকে বাকীতে সওদা নেওয়া হয়েছে — <strong className="font-bold text-slate-900 dark:text-white">পকেটের নগদ ক্যাশ ব্যালেন্স পরিবর্তন হবে না</strong>, শুধুমাত্র দেনা (Have to Pay) হিসেবে হিসাব থাকবে।
                             </span>
                           )}
                         </span>

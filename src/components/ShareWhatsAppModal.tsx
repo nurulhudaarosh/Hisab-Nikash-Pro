@@ -72,10 +72,10 @@ export const ShareWhatsAppModal: React.FC = () => {
           <button
             type="button"
             onClick={() => setLanguage('bengali')}
-            className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`py-2 rounded-lg text-xs font-bold transition-all cursor-pointer font-bangla ${
               language === 'bengali'
                 ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-slate-200 dark:border-slate-700'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             বাংলা (Bengali)
@@ -83,10 +83,10 @@ export const ShareWhatsAppModal: React.FC = () => {
           <button
             type="button"
             onClick={() => setLanguage('english')}
-            className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               language === 'english'
                 ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-slate-200 dark:border-slate-700'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             English
@@ -94,7 +94,7 @@ export const ShareWhatsAppModal: React.FC = () => {
         </div>
 
         {/* Message Preview Box */}
-        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/90 rounded-2xl p-4 font-sans text-xs sm:text-sm text-slate-800 dark:text-slate-200 whitespace-pre-line leading-relaxed shadow-inner">
+        <div className={`bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/90 rounded-2xl p-4 text-xs sm:text-sm text-slate-800 dark:text-slate-200 whitespace-pre-line leading-relaxed shadow-inner ${language === 'bengali' ? 'font-bangla' : 'font-sans'}`}>
           {activeText}
         </div>
 

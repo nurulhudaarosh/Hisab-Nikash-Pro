@@ -188,8 +188,10 @@ export const QuickAddDrawer: React.FC = () => {
               <Zap className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Smart Quick Entry (দ্রুত হিসাব)</h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white font-bangla">
+                Smart Quick Entry <span className="bangla-highlight-emerald font-bold">(দ্রুত হিসাব)</span>
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-300 font-bangla">
                 {activeMode === 'borrow'
                   ? 'Record borrowed money (ধার) with cash in hand (+ক্যাশ)'
                   : 'Type shorthand (e.g., "Tea 30", "Lunch 120", "Salary 25000")'}
@@ -214,7 +216,7 @@ export const QuickAddDrawer: React.FC = () => {
                 setActiveMode('expense');
                 setAffectsDailyLimit(true);
               }}
-              className={`py-2 px-1.5 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all cursor-pointer ${
+              className={`py-2 px-1.5 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all cursor-pointer font-bangla ${
                 activeMode === 'expense'
                   ? 'bg-rose-50 dark:bg-rose-950/80 border border-rose-500 text-rose-700 dark:text-rose-300 shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -230,7 +232,7 @@ export const QuickAddDrawer: React.FC = () => {
                 setActiveMode('income');
                 setAffectsDailyLimit(false);
               }}
-              className={`py-2 px-1.5 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all cursor-pointer ${
+              className={`py-2 px-1.5 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all cursor-pointer font-bangla ${
                 activeMode === 'income'
                   ? 'bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -246,7 +248,7 @@ export const QuickAddDrawer: React.FC = () => {
                 setActiveMode('borrow');
                 setIsCashHandled(true);
               }}
-              className={`py-2 px-1.5 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all cursor-pointer ${
+              className={`py-2 px-1.5 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all cursor-pointer font-bangla ${
                 activeMode === 'borrow'
                   ? 'bg-amber-50 dark:bg-amber-950/80 border border-amber-500 text-amber-700 dark:text-amber-300 shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -263,7 +265,7 @@ export const QuickAddDrawer: React.FC = () => {
                 setAmount('0');
                 setAffectsDailyLimit(false);
               }}
-              className={`py-2 px-1.5 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all cursor-pointer ${
+              className={`py-2 px-1.5 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all cursor-pointer font-bangla ${
                 activeMode === 'note'
                   ? 'bg-cyan-50 dark:bg-cyan-950/80 border border-cyan-500 text-cyan-700 dark:text-cyan-300 shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -277,9 +279,9 @@ export const QuickAddDrawer: React.FC = () => {
           {/* Quick Everyday Presets Strip (Only for Expense/Income) */}
           {activeMode === 'expense' && (
             <div>
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1.5 flex items-center gap-1">
+              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1.5 flex items-center gap-1 font-bangla">
                 <Sparkles className="w-3 h-3 text-emerald-500" />
-                Quick Presets (এক ক্লিকে খরচ যোগ)
+                Quick Presets <span className="bangla-highlight-emerald font-bold">(এক ক্লিকে খরচ যোগ)</span>
               </span>
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
                 {[
@@ -299,7 +301,7 @@ export const QuickAddDrawer: React.FC = () => {
                       setNote(p.note);
                       setAffectsDailyLimit(true);
                     }}
-                    className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-100 dark:hover:bg-emerald-950/60 border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-800 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-all hover:scale-102 shrink-0 cursor-pointer"
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-100 dark:hover:bg-emerald-950/60 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 hover:text-emerald-700 dark:hover:text-emerald-300 transition-all hover:scale-102 shrink-0 cursor-pointer font-bangla"
                   >
                     {p.label}
                   </button>
