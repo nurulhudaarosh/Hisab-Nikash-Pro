@@ -351,7 +351,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // Compute liquid cash impact from ledger entries
       if (ldg.history && Array.isArray(ldg.history) && ldg.history.length > 0) {
-        ldg.history.forEach((h) => {
+        ldg.history.forEach((h, idx) => {
           const amt = Number(h.amount || 0);
           if (amt <= 0) return;
 
@@ -360,25 +360,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           // For shop, default is non-cash (store credit/due) unless explicitly marked true.
           const wasCashReceivedOrLent =
             h.isCashHandled === true || (h.isCashHandled === undefined && isFriendOrGeneral);
+          const entryType = h.type || (idx === 0 ? 'initial' : 'repayment');
 
           if (ldg.ledgerType === 'i_owe') {
             // I owe them (Dena / Loan taken)
-            if (h.type === 'initial' || h.type === 'due_added') {
+            if (entryType === 'initial' || entryType === 'due_added') {
               if (wasCashReceivedOrLent) {
                 cashBorrowsReceived += amt; // Money entered my pocket from friend/person
               }
-            } else if (h.type === 'repayment') {
+            } else if (entryType === 'repayment') {
               if (h.isCashHandled !== false) {
                 cashRepaymentsPaid += amt; // Money left my pocket to pay back friend OR shop
               }
             }
           } else if (ldg.ledgerType === 'they_owe') {
             // They owe me (Paona / Loan given)
-            if (h.type === 'initial' || h.type === 'due_added') {
+            if (entryType === 'initial' || entryType === 'due_added') {
               if (wasCashReceivedOrLent) {
                 cashLentOut += amt; // Money left my pocket as a loan to them
               }
-            } else if (h.type === 'repayment') {
+            } else if (entryType === 'repayment') {
               if (h.isCashHandled !== false) {
                 cashRepaymentsCollected += amt; // Money returned back into my pocket
               }

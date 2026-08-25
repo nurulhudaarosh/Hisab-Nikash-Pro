@@ -50,6 +50,11 @@ export async function seedInitialDataIfNeeded(userId: string = 'local_user') {
     return;
   }
 
+  // If already seeded previously on this browser, do not re-seed even if user deleted all records
+  if (typeof window !== 'undefined' && localStorage.getItem('hisab_seeded_v1') === 'true') {
+    return;
+  }
+
   if (isSeeding) return;
   isSeeding = true;
 
@@ -240,6 +245,9 @@ export async function seedInitialDataIfNeeded(userId: string = 'local_user') {
       await db.transactions.bulkPut(initialTransactions);
       await db.ledgers.bulkPut(initialLedgers);
       await db.settings.put({ ...DEFAULT_SETTINGS, userId });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('hisab_seeded_v1', 'true');
+      }
     }
   } catch (err) {
     console.log('Initial seed completed or records already exist:', err);

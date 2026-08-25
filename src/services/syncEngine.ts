@@ -190,11 +190,11 @@ class SyncEngine {
     this.notify();
 
     try {
-      const userId = this.currentUser?.id || 'guest_offline_user';
+      const userId = this.currentUser?.id || 'local_user';
       const token = this.currentUser?.token || (typeof window !== 'undefined' ? localStorage.getItem('hisab_auth_token') : null);
 
       // 1. Gather all unsynced local data for this user
-      const unsynced = await getUnsyncedData(this.currentUser?.id);
+      const unsynced = await getUnsyncedData(userId);
       const txCount = unsynced.transactions.length;
       const ldgCount = unsynced.ledgers.length;
       const totalToPush = txCount + ldgCount + (unsynced.settings ? 1 : 0);

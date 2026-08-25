@@ -32,9 +32,12 @@ const TransactionSchema = new Schema<ITransactionDoc>(
 );
 
 export interface IRepayment {
+  id?: string;
+  type?: 'initial' | 'due_added' | 'repayment';
   date: string;
   amount: number;
   note: string;
+  isCashHandled?: boolean;
 }
 
 export interface ILedgerDoc extends Document {
@@ -64,9 +67,12 @@ const LedgerSchema = new Schema<ILedgerDoc>(
     remainingBalance: { type: Number, required: true },
     history: [
       {
+        id: { type: String },
+        type: { type: String, enum: ['initial', 'due_added', 'repayment'], default: 'repayment' },
         date: { type: String, required: true },
         amount: { type: Number, required: true },
         note: { type: String, default: '' },
+        isCashHandled: { type: Boolean, default: true },
       },
     ],
     status: { type: String, enum: ['active', 'settled'], default: 'active' },
