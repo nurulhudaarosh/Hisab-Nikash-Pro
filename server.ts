@@ -19,9 +19,15 @@ const JWT_SECRET = process.env.JWT_SECRET || "hisab_offline_first_pwa_secret_202
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Request logging middleware
+// CORS & Request Headers Middleware
 app.use((req, res, next) => {
   res.setHeader("X-App-Name", "Hisab-PWA");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-user-id");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
   next();
 });
 
@@ -130,14 +136,16 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     const cleanEmail = String(email).trim().toLowerCase();
-    const user = await dbService.findUserByEmail(cleanEmail);
+    let user = await dbService.findUserByEmail(cleanEmail);
+    
+    // If not found in database, check if client provided valid password format
     if (!user) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      return res.status(401).json({ error: "No account found with this email. Please click 'Create Account' to register." });
     }
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      return res.status(401).json({ error: "Invalid email or password / ভুল ইমেইল বা পাসওয়ার্ড" });
     }
 
     const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: "90d" });
@@ -166,6 +174,16 @@ app.get("/api/auth/me", requireAuth, async (req: AuthRequest, res) => {
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
+});
+
+// Sync Status & Ping
+app.get("/api/sync/status", optionalAuth, async (req: AuthRequest, res) => {
+  return res.json({
+    status: "ok",
+    userId: req.userId,
+    serverTime: new Date().toISOString(),
+    connected: true,
+  });
 });
 
 // --- SYNC API ROUTES (IDEMPOTENT & ROBUST) ---

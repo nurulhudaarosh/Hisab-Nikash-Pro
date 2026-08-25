@@ -33,7 +33,7 @@ export const Header: React.FC = () => {
   return (
     <header
       id="app-header"
-      className="sticky top-0 z-30 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800/80 px-2.5 sm:px-4 py-2 sm:py-3 transition-colors duration-200 shadow-sm dark:shadow-none"
+      className="sticky top-0 z-30 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800/80 px-2.5 sm:px-4 pb-2 sm:pb-3 safe-top-nav transition-colors duration-200 shadow-sm dark:shadow-none"
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-2">
         {/* Brand Logo & Name */}

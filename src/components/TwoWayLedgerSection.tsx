@@ -487,7 +487,14 @@ export const TwoWayLedgerSection: React.FC = () => {
                   </label>
                   <select
                     value={selectedExistingId}
-                    onChange={(e) => setSelectedExistingId(e.target.value)}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setSelectedExistingId(id);
+                      const target = ledgers.find((l) => l.id === id);
+                      if (target) {
+                        setNewIsCashHandled(target.contactType !== 'shop');
+                      }
+                    }}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 font-semibold"
                   >
                     {ledgers.map((l) => (
@@ -612,39 +619,47 @@ export const TwoWayLedgerSection: React.FC = () => {
               </div>
 
               {/* Cash in Hand Handling Checkbox & Positive Cash Explainer */}
-              <div className="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200 dark:border-emerald-900/50">
-                <label className="flex items-start gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={newIsCashHandled}
-                    onChange={(e) => setNewIsCashHandled(e.target.checked)}
-                    className="w-4 h-4 mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 cursor-pointer shrink-0"
-                  />
-                  <div className="text-xs space-y-0.5">
-                    <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1">
-                      <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      Physical Cash in Hand (হাতে নগদ টাকা এসেছে কি না?)
-                    </span>
-                    <span className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug block">
-                      {newIsCashHandled ? (
-                        newLedgerType === 'i_owe' ? (
-                          <span className="text-emerald-700 dark:text-emerald-300 font-medium">
-                            ✓ ধার বাবদ নগদ টাকা আপনার হাতে এসেছে — ড্যাশবোর্ডে <strong>'Current Balance' (নগদ ব্যালেন্স) বৃদ্ধি পাবে</strong> (+ক্যাশ)। পরবর্তীতে এই টাকা থেকে খরচ করলে ডাবল মাইনাস হবে না।
-                          </span>
-                        ) : (
-                          <span className="text-indigo-700 dark:text-indigo-300 font-medium">
-                            ✓ নিজের পকেট/ক্যাশ থেকে ধার দেওয়া হয়েছে — আপনার নগদ ক্যাশ ব্যালেন্স থেকে কর্তন হবে।
-                          </span>
-                        )
-                      ) : (
-                        <span className="text-slate-600 dark:text-slate-300 font-medium">
-                          ✓ দোকান থেকে বাকীতে সওদা নেওয়া হয়েছে — <strong>পকেটের নগদ ক্যাশ ব্যালেন্স পরিবর্তন হবে না</strong>, শুধুমাত্র দেনা হিসেবে হিসাব থাকবে।
+              {(() => {
+                const activeLedger = targetContactMode === 'existing' ? ledgers.find((l) => l.id === selectedExistingId) : null;
+                const activeType = activeLedger ? activeLedger.ledgerType : newLedgerType;
+                const activeContact = activeLedger ? activeLedger.contactType : newContactType;
+
+                return (
+                  <div className="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200 dark:border-emerald-900/50">
+                    <label className="flex items-start gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newIsCashHandled}
+                        onChange={(e) => setNewIsCashHandled(e.target.checked)}
+                        className="w-4 h-4 mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 cursor-pointer shrink-0"
+                      />
+                      <div className="text-xs space-y-0.5">
+                        <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1">
+                          <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          Physical Cash in Hand (হাতে নগদ টাকা এসেছে কি না?)
                         </span>
-                      )}
-                    </span>
+                        <span className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug block">
+                          {newIsCashHandled ? (
+                            activeType === 'i_owe' ? (
+                              <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+                                ✓ ধার বাবদ নগদ টাকা আপনার হাতে এসেছে — ড্যাশবোর্ডে <strong>'In-Hand Cash' (নগদ টাকা) বৃদ্ধি পাবে</strong> (+ক্যাশ)। পরবর্তীতে এই টাকা থেকে খরচ করলে মানিব্যাগ থেকে কমবে।
+                              </span>
+                            ) : (
+                              <span className="text-indigo-700 dark:text-indigo-300 font-medium">
+                                ✓ নিজের পকেট/ক্যাশ থেকে ধার দেওয়া হয়েছে — আপনার নগদ ক্যাশ ব্যালেন্স থেকে কর্তন হবে।
+                              </span>
+                            )
+                          ) : (
+                            <span className="text-slate-600 dark:text-slate-300 font-medium">
+                              ✓ দোকান থেকে বাকীতে সওদা নেওয়া হয়েছে — <strong>পকেটের নগদ ক্যাশ ব্যালেন্স পরিবর্তন হবে না</strong>, শুধুমাত্র দেনা (Have to Pay) হিসেবে হিসাব থাকবে।
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </label>
                   </div>
-                </label>
-              </div>
+                );
+              })()}
 
               {/* Optional Note */}
               <div>

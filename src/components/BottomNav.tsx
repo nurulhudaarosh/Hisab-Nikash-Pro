@@ -22,7 +22,7 @@ export const BottomNav: React.FC = () => {
   return (
     <div
       id="bottom-navigation-bar"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800/80 px-3 pt-1 pb-[max(env(safe-area-inset-bottom,0px),0.5rem)] sm:hidden shadow-lg dark:shadow-none transition-all"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800/80 px-3 pt-1 safe-bottom-nav sm:hidden shadow-lg dark:shadow-none transition-all"
     >
       <div className="max-w-md mx-auto flex items-center justify-around relative">
         {/* First 2 items */}

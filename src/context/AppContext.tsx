@@ -350,7 +350,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       // Compute liquid cash impact from ledger entries
-      if (ldg.history && Array.isArray(ldg.history)) {
+      if (ldg.history && Array.isArray(ldg.history) && ldg.history.length > 0) {
         ldg.history.forEach((h) => {
           const amt = Number(h.amount || 0);
           if (amt <= 0) return;
@@ -365,11 +365,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             // I owe them (Dena / Loan taken)
             if (h.type === 'initial' || h.type === 'due_added') {
               if (wasCashReceivedOrLent) {
-                cashBorrowsReceived += amt; // Money entered my pocket
+                cashBorrowsReceived += amt; // Money entered my pocket from friend/person
               }
             } else if (h.type === 'repayment') {
               if (h.isCashHandled !== false) {
-                cashRepaymentsPaid += amt; // Money left my pocket to pay back
+                cashRepaymentsPaid += amt; // Money left my pocket to pay back friend OR shop
               }
             }
           } else if (ldg.ledgerType === 'they_owe') {
@@ -385,6 +385,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
           }
         });
+      } else {
+        // Fallback for legacy or imported ledgers without granular history logs
+        const isFriendOrGeneral = ldg.contactType === 'friend' || !ldg.contactType;
+        const orig = Number(ldg.originalAmount || 0);
+        const paid = Number(ldg.paidAmount || 0);
+
+        if (ldg.ledgerType === 'i_owe') {
+          if (isFriendOrGeneral) {
+            cashBorrowsReceived += orig; // Initial cash borrow from friend
+          }
+          if (paid > 0) {
+            cashRepaymentsPaid += paid; // Repayments paid in cash
+          }
+        } else if (ldg.ledgerType === 'they_owe') {
+          cashLentOut += orig;
+          if (paid > 0) {
+            cashRepaymentsCollected += paid;
+          }
+        }
       }
     });
 

@@ -65,6 +65,9 @@ export async function seedInitialDataIfNeeded(userId: string = 'local_user') {
       const twoDaysAgo = new Date(now);
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
+      const threeDaysAgo = new Date(now);
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
       const initialTransactions: Transaction[] = [
         {
           id: 'tx_seed_1',
@@ -158,9 +161,20 @@ export async function seedInitialDataIfNeeded(userId: string = 'local_user') {
           remainingBalance: 700,
           history: [
             {
+              id: 'lh_seed_1_init',
+              type: 'initial',
+              date: twoDaysAgo.toISOString(),
+              amount: 1200,
+              note: 'Monthly groceries taken on credit (দোকানের বাকী)',
+              isCashHandled: false, // Shop goods on due, no cash received into moneybag
+            },
+            {
+              id: 'lh_seed_1_pay',
+              type: 'repayment',
               date: yesterday.toISOString(),
               amount: 500,
-              note: 'Paid via bKash / Cash partial payment',
+              note: 'Paid via Cash / bKash partial payment (দোকানে পরিশোধ)',
+              isCashHandled: true, // Paid 500 cash from moneybag to store
             },
           ],
           status: 'active',
@@ -176,7 +190,16 @@ export async function seedInitialDataIfNeeded(userId: string = 'local_user') {
           originalAmount: 1500,
           paidAmount: 0,
           remainingBalance: 1500,
-          history: [],
+          history: [
+            {
+              id: 'lh_seed_2_init',
+              type: 'initial',
+              date: threeDaysAgo.toISOString(),
+              amount: 1500,
+              note: 'Lent money for urgent medical need (নগদ ধার দিয়েছি)',
+              isCashHandled: true, // 1500 cash lent out from moneybag
+            },
+          ],
           status: 'active',
           synced: true,
           updatedAt: todayStr,
@@ -192,9 +215,20 @@ export async function seedInitialDataIfNeeded(userId: string = 'local_user') {
           remainingBalance: 0,
           history: [
             {
+              id: 'lh_seed_3_init',
+              type: 'initial',
+              date: threeDaysAgo.toISOString(),
+              amount: 800,
+              note: 'Hand cash loan for concert ticket',
+              isCashHandled: true,
+            },
+            {
+              id: 'lh_seed_3_pay',
+              type: 'repayment',
               date: twoDaysAgo.toISOString(),
               amount: 800,
-              note: 'Returned in full at coffee shop 🎉',
+              note: 'Returned in full at coffee shop 🎉 (পাওনা টাকা বুঝে পেয়েছি)',
+              isCashHandled: true,
             },
           ],
           status: 'settled',
