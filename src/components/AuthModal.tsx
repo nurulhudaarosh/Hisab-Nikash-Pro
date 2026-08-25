@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, Lock, Mail, CheckCircle2, ShieldCheck, LogOut, ArrowRight, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { authService } from '../services/authService';
 
 export const AuthModal: React.FC = () => {
   const {
@@ -36,35 +37,29 @@ export const AuthModal: React.FC = () => {
     setLoading(true);
 
     try {
-      const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
-      const payload = mode === 'login' ? { email, password } : { name, email, password };
-
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Authentication failed');
+      let result;
+      if (mode === 'login') {
+        result = await authService.login(email, password);
+      } else {
+        result = await authService.register(name, email, password);
       }
 
       setUserProfile({
-        id: data.user.id,
-        email: data.user.email,
-        name: data.user.name,
-        token: data.token,
+        id: result.user.id,
+        email: result.user.email,
+        name: result.user.name,
+        token: result.token,
       });
 
       showToast(
-        mode === 'login' ? `Welcome back, ${data.user.name}!` : `Account created! Logged in as ${data.user.name}`,
+        mode === 'login'
+          ? `Welcome back, ${result.user.name}!`
+          : `Account created! Logged in as ${result.user.name}`,
         'success'
       );
       closeAuthModal();
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Authentication failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }

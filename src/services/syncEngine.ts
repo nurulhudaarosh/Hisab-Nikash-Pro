@@ -128,9 +128,14 @@ class SyncEngine {
           }),
         });
 
+        const contentType = pushRes.headers.get('content-type') || '';
         if (!pushRes.ok) {
-          const errData = await pushRes.json().catch(() => ({}));
-          throw new Error(errData.error || `Server responded with ${pushRes.status}`);
+          let errorMsg = `Server responded with ${pushRes.status}`;
+          if (contentType.includes('application/json')) {
+            const errData = await pushRes.json().catch(() => ({}));
+            errorMsg = errData.error || errorMsg;
+          }
+          throw new Error(errorMsg);
         }
 
         // Mark local records as synced
@@ -148,10 +153,11 @@ class SyncEngine {
         }),
       });
 
-      if (pullRes.ok) {
-        const pullData = await pullRes.json();
-        if (pullData.success) {
-          await mergeIncomingData(pullData.transactions, pullData.ledgers, pullData.settings);
+      const pullContentType = pullRes.headers.get('content-type') || '';
+      if (pullRes.ok && pullContentType.includes('application/json')) {
+        const pullData = await pullRes.json().catch(() => null);
+        if (pullData?.success) {
+          await mergeIncomingData(pullData.transactions || [], pullData.ledgers || [], pullData.settings);
         }
       }
 

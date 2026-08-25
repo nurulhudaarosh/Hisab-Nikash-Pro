@@ -257,6 +257,11 @@ app.post("/api/sync/settings", optionalAuth, async (req: AuthRequest, res) => {
   }
 });
 
+// API 404 handler - prevents /api/* from falling back to HTML index.html
+app.all("/api/*", (req, res) => {
+  res.status(404).json({ error: `API route ${req.method} ${req.path} not found` });
+});
+
 // Start Server and mount Vite
 async function start() {
   await initDatabase();

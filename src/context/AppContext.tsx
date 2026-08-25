@@ -334,26 +334,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (ldg.history && Array.isArray(ldg.history)) {
         ldg.history.forEach((h) => {
           const amt = Number(h.amount || 0);
+          if (amt <= 0) return;
+
+          const isFriendOrGeneral = ldg.contactType === 'friend' || !ldg.contactType;
+          // For friend/general contact, default is cash handled unless explicitly marked false.
+          // For shop, default is non-cash (store credit/due) unless explicitly marked true.
+          const wasCashReceivedOrLent =
+            h.isCashHandled === true || (h.isCashHandled === undefined && isFriendOrGeneral);
+
           if (ldg.ledgerType === 'i_owe') {
             // I owe them (Dena / Loan taken)
             if (h.type === 'initial' || h.type === 'due_added') {
-              if (h.isCashHandled) {
-                cashBorrowsReceived += amt;
+              if (wasCashReceivedOrLent) {
+                cashBorrowsReceived += amt; // Money entered my pocket
               }
             } else if (h.type === 'repayment') {
               if (h.isCashHandled !== false) {
-                cashRepaymentsPaid += amt;
+                cashRepaymentsPaid += amt; // Money left my pocket to pay back
               }
             }
           } else if (ldg.ledgerType === 'they_owe') {
             // They owe me (Paona / Loan given)
             if (h.type === 'initial' || h.type === 'due_added') {
-              if (h.isCashHandled) {
-                cashLentOut += amt;
+              if (wasCashReceivedOrLent) {
+                cashLentOut += amt; // Money left my pocket as a loan to them
               }
             } else if (h.type === 'repayment') {
               if (h.isCashHandled !== false) {
-                cashRepaymentsCollected += amt;
+                cashRepaymentsCollected += amt; // Money returned back into my pocket
               }
             }
           }
