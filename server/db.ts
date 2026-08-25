@@ -4,6 +4,7 @@ import path from 'path';
 import { TransactionModel, LedgerModel, UserSettingsModel, UserModel } from './models.js';
 
 let isMongoConnected = false;
+let mongoConnectingPromise: Promise<any> | null = null;
 
 // Fallback in-memory storage for offline / sandbox mode
 interface MemoryStore {
@@ -20,7 +21,16 @@ const memoryStore: MemoryStore = {
   settings: new Map(),
 };
 
-const BACKUP_FILE = path.join(process.cwd(), '.server_storage_backup.json');
+// Safe backup file path that works in container, local dev, and serverless /tmp
+const getBackupFilePath = () => {
+  const tmpDir = process.env.TMPDIR || '/tmp';
+  if (fs.existsSync(tmpDir)) {
+    return path.join(tmpDir, '.server_storage_backup.json');
+  }
+  return path.join(process.cwd(), '.server_storage_backup.json');
+};
+
+const BACKUP_FILE = getBackupFilePath();
 
 // Load fallback backup from disk if exists
 try {
@@ -33,7 +43,7 @@ try {
     if (parsed.settings) Object.entries(parsed.settings).forEach(([k, v]) => memoryStore.settings.set(k, v));
   }
 } catch (e) {
-  console.warn('Could not read server storage backup:', e);
+  // Silent fallback
 }
 
 function persistMemoryStore() {
@@ -46,11 +56,30 @@ function persistMemoryStore() {
     };
     fs.writeFileSync(BACKUP_FILE, JSON.stringify(serialized, null, 2), 'utf-8');
   } catch (e) {
-    // Non-fatal
+    // Non-fatal if filesystem is read-only
   }
 }
 
 export async function initDatabase(): Promise<{ isConnected: boolean; type: string }> {
+  // If already connected in warm serverless container or active server, reuse connection
+  if ((mongoose.connection.readyState as number) === 1) {
+    isMongoConnected = true;
+    return { isConnected: true, type: 'mongodb' };
+  }
+
+  // If connection is already in progress, await the existing promise
+  if (mongoConnectingPromise) {
+    try {
+      await mongoConnectingPromise;
+      if ((mongoose.connection.readyState as number) === 1) {
+        isMongoConnected = true;
+        return { isConnected: true, type: 'mongodb' };
+      }
+    } catch {
+      // Fall through to fallback
+    }
+  }
+
   const uri = process.env.MONGODB_URI;
   if (uri && uri.trim() !== '' && !uri.includes('MY_MONGODB_URI')) {
     try {
@@ -58,22 +87,33 @@ export async function initDatabase(): Promise<{ isConnected: boolean; type: stri
       mongoose.connection.on('error', () => {
         isMongoConnected = false;
       });
-      await mongoose.connect(uri, {
-        serverSelectionTimeoutMS: 2500,
-        connectTimeoutMS: 2500,
+      mongoose.connection.on('disconnected', () => {
+        isMongoConnected = false;
       });
-      isMongoConnected = true;
-      console.log('Connected to MongoDB database');
-      return { isConnected: true, type: 'mongodb' };
-    } catch {
+
+      mongoConnectingPromise = mongoose.connect(uri, {
+        serverSelectionTimeoutMS: 5000,
+        connectTimeoutMS: 5000,
+        bufferCommands: false,
+      });
+
+      await mongoConnectingPromise;
+      mongoConnectingPromise = null;
+      isMongoConnected = (mongoose.connection.readyState as number) === 1;
+
+      if (isMongoConnected) {
+        console.log('Connected to MongoDB database');
+        return { isConnected: true, type: 'mongodb' };
+      }
+    } catch (err: any) {
+      mongoConnectingPromise = null;
       isMongoConnected = false;
-      console.log('MongoDB server unreachable; operating in durable local-storage mode.');
+      console.warn('MongoDB connection issue, using resilient storage engine:', err?.message || err);
       return { isConnected: false, type: 'fallback_storage' };
     }
-  } else {
-    console.log('Operating in durable server-storage engine mode with file persistence.');
-    return { isConnected: true, type: 'fallback_storage' };
   }
+
+  return { isConnected: true, type: 'fallback_storage' };
 }
 
 export const dbService = {
