@@ -52,6 +52,10 @@ export const authService = {
     const cleanEmail = email.trim().toLowerCase();
     const cleanName = name.trim();
 
+    if (!cleanName || !cleanEmail || !pass) {
+      throw new Error('Please provide name, email, and password');
+    }
+
     // 1. First attempt Cloud Server API
     try {
       const res = await fetch('/api/auth/register', {
@@ -61,34 +65,44 @@ export const authService = {
       });
 
       const contentType = res.headers.get('content-type') || '';
+      let data: any = null;
       if (contentType.includes('application/json')) {
-        const data = await res.json();
-        if (res.ok && data?.user && data?.token) {
-          // Cache user locally for offline use
-          const users = getLocalUsers();
-          users[cleanEmail] = {
-            id: data.user.id,
-            email: cleanEmail,
-            name: cleanName,
-            passwordHash: simpleHash(pass),
-            createdAt: new Date().toISOString(),
-          };
-          saveLocalUsers(users);
+        data = await res.json().catch(() => null);
+      }
 
-          return { user: data.user, token: data.token, isCloud: true };
-        } else if (!res.ok) {
-          throw new Error(data?.error || 'Registration failed');
-        }
+      if (res.ok && data?.user && data?.token) {
+        // Cache user locally for offline use
+        const users = getLocalUsers();
+        users[cleanEmail] = {
+          id: data.user.id,
+          email: cleanEmail,
+          name: cleanName,
+          passwordHash: simpleHash(pass),
+          createdAt: new Date().toISOString(),
+        };
+        saveLocalUsers(users);
+
+        return { user: data.user, token: data.token, isCloud: true };
+      } else {
+        // Server returned an error (e.g., 400, 409, 500)
+        const errorMsg = data?.error || `Registration failed (HTTP ${res.status})`;
+        throw new Error(errorMsg);
       }
     } catch (err: any) {
-      // If server returned an explicit error (e.g. email exists), propagate directly to user
-      if (err.message && !err.message.includes('Unexpected') && !err.message.includes('Failed to fetch') && !err.message.includes('NetworkError') && !err.message.includes('Load failed')) {
+      const isNetworkError =
+        err.name === 'TypeError' ||
+        err.message?.includes('Failed to fetch') ||
+        err.message?.includes('NetworkError') ||
+        err.message?.includes('Load failed');
+
+      // If it's a real server error (duplicate email, validation, etc.), throw it to inform user
+      if (!isNetworkError) {
         throw err;
       }
-      console.warn('Server unavailable, fallback to offline registration:', err);
+      console.warn('Server unavailable, attempting offline registration fallback:', err);
     }
 
-    // 2. Offline-First Local Registration Fallback
+    // 2. Offline-First Local Registration Fallback (Only when internet/network is strictly disconnected)
     const localUsers = getLocalUsers();
     if (localUsers[cleanEmail]) {
       throw new Error('An account with this email already exists locally. Please sign in.');
@@ -118,6 +132,10 @@ export const authService = {
   async login(email: string, pass: string): Promise<{ user: UserProfile; token: string; isCloud: boolean }> {
     const cleanEmail = email.trim().toLowerCase();
 
+    if (!cleanEmail || !pass) {
+      throw new Error('Email and password are required');
+    }
+
     // 1. First attempt Cloud Server API
     try {
       const res = await fetch('/api/auth/login', {
@@ -127,30 +145,39 @@ export const authService = {
       });
 
       const contentType = res.headers.get('content-type') || '';
+      let data: any = null;
       if (contentType.includes('application/json')) {
-        const data = await res.json();
-        if (res.ok && data?.user && data?.token) {
-          // Cache user locally
-          const users = getLocalUsers();
-          users[cleanEmail] = {
-            id: data.user.id,
-            email: cleanEmail,
-            name: data.user.name || cleanEmail.split('@')[0],
-            passwordHash: simpleHash(pass),
-            createdAt: new Date().toISOString(),
-          };
-          saveLocalUsers(users);
+        data = await res.json().catch(() => null);
+      }
 
-          return { user: data.user, token: data.token, isCloud: true };
-        } else if (!res.ok) {
-          throw new Error(data?.error || 'Invalid email or password / ভুল ইমেইল বা পাসওয়ার্ড');
-        }
+      if (res.ok && data?.user && data?.token) {
+        // Cache user locally
+        const users = getLocalUsers();
+        users[cleanEmail] = {
+          id: data.user.id,
+          email: cleanEmail,
+          name: data.user.name || cleanEmail.split('@')[0],
+          passwordHash: simpleHash(pass),
+          createdAt: new Date().toISOString(),
+        };
+        saveLocalUsers(users);
+
+        return { user: data.user, token: data.token, isCloud: true };
+      } else {
+        const errorMsg = data?.error || `Sign in failed (HTTP ${res.status})`;
+        throw new Error(errorMsg);
       }
     } catch (err: any) {
-      if (err.message && !err.message.includes('Unexpected') && !err.message.includes('Failed to fetch') && !err.message.includes('NetworkError') && !err.message.includes('Load failed')) {
+      const isNetworkError =
+        err.name === 'TypeError' ||
+        err.message?.includes('Failed to fetch') ||
+        err.message?.includes('NetworkError') ||
+        err.message?.includes('Load failed');
+
+      if (!isNetworkError) {
         throw err;
       }
-      console.warn('Server unavailable, fallback to offline login check:', err);
+      console.warn('Server unavailable, attempting offline login check:', err);
     }
 
     // 2. Offline-First Local Login Fallback
@@ -169,6 +196,6 @@ export const authService = {
       };
     }
 
-    throw new Error('User not found on this device and server is offline. Please check your internet connection.');
+    throw new Error('User not found on this device and cloud server is offline. Please check your network connection.');
   },
 };

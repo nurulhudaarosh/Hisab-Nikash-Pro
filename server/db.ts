@@ -1,9 +1,11 @@
 import mongoose from 'mongoose';
 import fs from 'fs';
 import path from 'path';
+import dotenv from 'dotenv';
 import { TransactionModel, LedgerModel, UserSettingsModel, UserModel } from './models.js';
 
-let isMongoConnected = false;
+dotenv.config();
+
 let mongoConnectingPromise: Promise<any> | null = null;
 
 // Fallback in-memory storage for offline / sandbox mode
@@ -63,7 +65,6 @@ function persistMemoryStore() {
 export async function initDatabase(): Promise<{ isConnected: boolean; type: string }> {
   // If already connected in warm serverless container or active server, reuse connection
   if ((mongoose.connection.readyState as number) === 1) {
-    isMongoConnected = true;
     return { isConnected: true, type: 'mongodb' };
   }
 
@@ -72,11 +73,10 @@ export async function initDatabase(): Promise<{ isConnected: boolean; type: stri
     try {
       await mongoConnectingPromise;
       if ((mongoose.connection.readyState as number) === 1) {
-        isMongoConnected = true;
         return { isConnected: true, type: 'mongodb' };
       }
     } catch {
-      // Fall through to fallback
+      // Fall through to retry or fallback
     }
   }
 
@@ -84,72 +84,101 @@ export async function initDatabase(): Promise<{ isConnected: boolean; type: stri
   if (uri && uri.trim() !== '' && !uri.includes('MY_MONGODB_URI')) {
     try {
       mongoose.set('strictQuery', false);
-      mongoose.connection.on('error', () => {
-        isMongoConnected = false;
-      });
-      mongoose.connection.on('disconnected', () => {
-        isMongoConnected = false;
-      });
 
-      mongoConnectingPromise = mongoose.connect(uri, {
-        serverSelectionTimeoutMS: 5000,
-        connectTimeoutMS: 5000,
-        bufferCommands: false,
+      mongoConnectingPromise = mongoose.connect(uri.trim(), {
+        serverSelectionTimeoutMS: 8000,
+        connectTimeoutMS: 8000,
       });
 
       await mongoConnectingPromise;
       mongoConnectingPromise = null;
-      isMongoConnected = (mongoose.connection.readyState as number) === 1;
 
-      if (isMongoConnected) {
-        console.log('Connected to MongoDB database');
+      const isConnected = (mongoose.connection.readyState as number) === 1;
+      if (isConnected) {
+        console.log('✅ Successfully connected to MongoDB database');
         return { isConnected: true, type: 'mongodb' };
       }
     } catch (err: any) {
       mongoConnectingPromise = null;
-      isMongoConnected = false;
-      console.warn('MongoDB connection issue, using resilient storage engine:', err?.message || err);
+      console.warn('MongoDB connection note (using fallback local storage):', err?.message || err);
       return { isConnected: false, type: 'fallback_storage' };
     }
   }
 
-  return { isConnected: true, type: 'fallback_storage' };
+  return { isConnected: (mongoose.connection.readyState as number) === 1, type: 'fallback_storage' };
 }
 
 export const dbService = {
-  isMongo: () => isMongoConnected,
+  isMongo: () => (mongoose.connection.readyState as number) === 1,
 
   // User operations
   async findUserByEmail(email: string): Promise<any | null> {
-    if (isMongoConnected) {
-      return await (UserModel as any).findOne({ email: email.toLowerCase() }).lean();
+    const cleanEmail = email.toLowerCase().trim();
+    if (this.isMongo()) {
+      try {
+        const userDoc = await (UserModel as any).findOne({ email: cleanEmail }).lean();
+        if (userDoc) return userDoc;
+      } catch (e) {
+        console.warn('Error querying MongoDB for user by email:', e);
+      }
     }
     for (const user of memoryStore.users.values()) {
-      if (user.email.toLowerCase() === email.toLowerCase()) return user;
+      if (user.email.toLowerCase() === cleanEmail) return user;
     }
     return null;
   },
 
   async findUserById(id: string): Promise<any | null> {
-    if (isMongoConnected) {
-      return await (UserModel as any).findOne({ id }).lean();
+    if (this.isMongo()) {
+      try {
+        const userDoc = await (UserModel as any).findOne({ id }).lean();
+        if (userDoc) return userDoc;
+      } catch (e) {
+        console.warn('Error querying MongoDB for user by id:', e);
+      }
     }
     return memoryStore.users.get(id) || null;
   },
 
   async createUser(user: { id: string; email: string; passwordHash: string; name: string }): Promise<any> {
-    if (isMongoConnected) {
-      const doc = new UserModel(user);
-      return await doc.save();
+    const createdAt = new Date().toISOString();
+    const userPayload = {
+      ...user,
+      email: user.email.toLowerCase().trim(),
+      name: user.name.trim(),
+      createdAt,
+      updatedAt: createdAt,
+    };
+
+    if (this.isMongo()) {
+      try {
+        const created = await (UserModel as any).create(userPayload);
+        const result = created.toObject ? created.toObject() : created;
+        
+        // Also keep memoryStore backup updated
+        memoryStore.users.set(user.id, userPayload);
+        persistMemoryStore();
+        
+        return result;
+      } catch (mongoErr: any) {
+        console.error('Error creating user in MongoDB:', mongoErr);
+        if (mongoErr.code === 11000 || mongoErr.message?.includes('E11000')) {
+          throw new Error('An account with this email already exists');
+        }
+        throw mongoErr;
+      }
     }
-    memoryStore.users.set(user.id, { ...user, createdAt: new Date().toISOString() });
+
+    memoryStore.users.set(user.id, userPayload);
     persistMemoryStore();
-    return memoryStore.users.get(user.id);
+    return userPayload;
   },
 
   // Sync Transactions
   async upsertTransactions(userId: string, transactions: any[]): Promise<any[]> {
     const results: any[] = [];
+    const isMongo = this.isMongo();
+
     for (const t of transactions) {
       const payload = {
         ...t,
@@ -157,30 +186,39 @@ export const dbService = {
         updatedAt: t.updatedAt || new Date().toISOString(),
       };
 
-      if (isMongoConnected) {
-        const updated = await (TransactionModel as any).findOneAndUpdate(
-          { id: t.id, userId },
-          { $set: payload },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        ).lean();
-        results.push(updated);
+      if (isMongo) {
+        try {
+          const updated = await (TransactionModel as any).findOneAndUpdate(
+            { id: t.id, userId },
+            { $set: payload },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          ).lean();
+          results.push(updated || payload);
+        } catch (e) {
+          console.warn('Error upserting transaction to MongoDB:', e);
+          results.push(payload);
+        }
       } else {
         const key = `${userId}:${t.id}`;
         memoryStore.transactions.set(key, payload);
         results.push(payload);
       }
     }
-    if (!isMongoConnected) persistMemoryStore();
+    if (!isMongo) persistMemoryStore();
     return results;
   },
 
   async getTransactionsSince(userId: string, sinceIso?: string): Promise<any[]> {
-    if (isMongoConnected) {
-      const query: any = { userId };
-      if (sinceIso) {
-        query.updatedAt = { $gt: sinceIso };
+    if (this.isMongo()) {
+      try {
+        const query: any = { userId };
+        if (sinceIso) {
+          query.updatedAt = { $gt: sinceIso };
+        }
+        return await (TransactionModel as any).find(query).lean();
+      } catch (e) {
+        console.warn('Error fetching transactions from MongoDB:', e);
       }
-      return await (TransactionModel as any).find(query).lean();
     }
     const list: any[] = [];
     for (const [, t] of memoryStore.transactions.entries()) {
@@ -196,6 +234,8 @@ export const dbService = {
   // Sync Ledgers
   async upsertLedgers(userId: string, ledgers: any[]): Promise<any[]> {
     const results: any[] = [];
+    const isMongo = this.isMongo();
+
     for (const l of ledgers) {
       const payload = {
         ...l,
@@ -203,30 +243,39 @@ export const dbService = {
         updatedAt: l.updatedAt || new Date().toISOString(),
       };
 
-      if (isMongoConnected) {
-        const updated = await (LedgerModel as any).findOneAndUpdate(
-          { id: l.id, userId },
-          { $set: payload },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        ).lean();
-        results.push(updated);
+      if (isMongo) {
+        try {
+          const updated = await (LedgerModel as any).findOneAndUpdate(
+            { id: l.id, userId },
+            { $set: payload },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          ).lean();
+          results.push(updated || payload);
+        } catch (e) {
+          console.warn('Error upserting ledger to MongoDB:', e);
+          results.push(payload);
+        }
       } else {
         const key = `${userId}:${l.id}`;
         memoryStore.ledgers.set(key, payload);
         results.push(payload);
       }
     }
-    if (!isMongoConnected) persistMemoryStore();
+    if (!isMongo) persistMemoryStore();
     return results;
   },
 
   async getLedgersSince(userId: string, sinceIso?: string): Promise<any[]> {
-    if (isMongoConnected) {
-      const query: any = { userId };
-      if (sinceIso) {
-        query.updatedAt = { $gt: sinceIso };
+    if (this.isMongo()) {
+      try {
+        const query: any = { userId };
+        if (sinceIso) {
+          query.updatedAt = { $gt: sinceIso };
+        }
+        return await (LedgerModel as any).find(query).lean();
+      } catch (e) {
+        console.warn('Error fetching ledgers from MongoDB:', e);
       }
-      return await (LedgerModel as any).find(query).lean();
     }
     const list: any[] = [];
     for (const [, l] of memoryStore.ledgers.entries()) {
@@ -247,23 +296,33 @@ export const dbService = {
       updatedAt: settings.updatedAt || new Date().toISOString(),
     };
 
-    if (isMongoConnected) {
-      return await (UserSettingsModel as any).findOneAndUpdate(
-        { userId },
-        { $set: payload },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      ).lean();
-    } else {
-      memoryStore.settings.set(userId, payload);
-      persistMemoryStore();
-      return payload;
+    if (this.isMongo()) {
+      try {
+        const updated = await (UserSettingsModel as any).findOneAndUpdate(
+          { userId },
+          { $set: payload },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        ).lean();
+        return updated || payload;
+      } catch (e) {
+        console.warn('Error upserting settings to MongoDB:', e);
+      }
     }
+    
+    memoryStore.settings.set(userId, payload);
+    persistMemoryStore();
+    return payload;
   },
 
   async getSettings(userId: string): Promise<any | null> {
-    if (isMongoConnected) {
-      return await (UserSettingsModel as any).findOne({ userId }).lean();
+    if (this.isMongo()) {
+      try {
+        return await (UserSettingsModel as any).findOne({ userId }).lean();
+      } catch (e) {
+        console.warn('Error fetching settings from MongoDB:', e);
+      }
     }
     return memoryStore.settings.get(userId) || null;
   }
 };
+

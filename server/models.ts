@@ -26,9 +26,9 @@ const TransactionSchema = new Schema<ITransactionDoc>(
     note: { type: String, default: '' },
     date: { type: String, required: true },
     deleted: { type: Boolean, default: false },
-    updatedAt: { type: String, required: true },
+    updatedAt: { type: String, required: true, default: () => new Date().toISOString() },
   },
-  { timestamps: true }
+  { timestamps: false, versionKey: false }
 );
 
 export interface IRepayment {
@@ -77,9 +77,9 @@ const LedgerSchema = new Schema<ILedgerDoc>(
     ],
     status: { type: String, enum: ['active', 'settled'], default: 'active' },
     deleted: { type: Boolean, default: false },
-    updatedAt: { type: String, required: true },
+    updatedAt: { type: String, required: true, default: () => new Date().toISOString() },
   },
-  { timestamps: true }
+  { timestamps: false, versionKey: false }
 );
 
 export interface IUserSettingsDoc extends Document {
@@ -108,9 +108,9 @@ const UserSettingsSchema = new Schema<IUserSettingsDoc>(
       ],
       default: [],
     },
-    updatedAt: { type: String, required: true },
+    updatedAt: { type: String, required: true, default: () => new Date().toISOString() },
   },
-  { timestamps: true }
+  { timestamps: false, versionKey: false }
 );
 
 export interface IUserDoc extends Document {
@@ -119,6 +119,7 @@ export interface IUserDoc extends Document {
   passwordHash: string;
   name: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 const UserSchema = new Schema<IUserDoc>(
@@ -128,11 +129,13 @@ const UserSchema = new Schema<IUserDoc>(
     passwordHash: { type: String, required: true },
     name: { type: String, required: true },
     createdAt: { type: String, default: () => new Date().toISOString() },
+    updatedAt: { type: String, default: () => new Date().toISOString() },
   },
-  { timestamps: true }
+  { timestamps: false, versionKey: false }
 );
 
 export const TransactionModel = mongoose.models.Transaction || mongoose.model<ITransactionDoc>('Transaction', TransactionSchema);
 export const LedgerModel = mongoose.models.Ledger || mongoose.model<ILedgerDoc>('Ledger', LedgerSchema);
 export const UserSettingsModel = mongoose.models.UserSettings || mongoose.model<IUserSettingsDoc>('UserSettings', UserSettingsSchema);
 export const UserModel = mongoose.models.User || mongoose.model<IUserDoc>('User', UserSchema);
+
