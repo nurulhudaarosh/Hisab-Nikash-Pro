@@ -62,7 +62,9 @@ function persistMemoryStore() {
   }
 }
 
-export async function initDatabase(): Promise<{ isConnected: boolean; type: string }> {
+let lastMongoError: string | null = null;
+
+export async function initDatabase(): Promise<{ isConnected: boolean; type: string; error?: string }> {
   // If already connected in warm serverless container or active server, reuse connection
   if ((mongoose.connection.readyState as number) === 1) {
     return { isConnected: true, type: 'mongodb' };
@@ -75,19 +77,24 @@ export async function initDatabase(): Promise<{ isConnected: boolean; type: stri
       if ((mongoose.connection.readyState as number) === 1) {
         return { isConnected: true, type: 'mongodb' };
       }
-    } catch {
-      // Fall through to retry or fallback
+    } catch (e: any) {
+      lastMongoError = e?.message || String(e);
     }
   }
 
-  const uri = process.env.MONGODB_URI;
+  const uri =
+    process.env.MONGODB_URI ||
+    process.env.MONGO_URI ||
+    process.env.DATABASE_URL ||
+    process.env.MONGODB_URL;
+
   if (uri && uri.trim() !== '' && !uri.includes('MY_MONGODB_URI')) {
     try {
       mongoose.set('strictQuery', false);
 
       mongoConnectingPromise = mongoose.connect(uri.trim(), {
-        serverSelectionTimeoutMS: 8000,
-        connectTimeoutMS: 8000,
+        serverSelectionTimeoutMS: 10000,
+        connectTimeoutMS: 10000,
       });
 
       await mongoConnectingPromise;
@@ -95,21 +102,30 @@ export async function initDatabase(): Promise<{ isConnected: boolean; type: stri
 
       const isConnected = (mongoose.connection.readyState as number) === 1;
       if (isConnected) {
+        lastMongoError = null;
         console.log('✅ Successfully connected to MongoDB database');
         return { isConnected: true, type: 'mongodb' };
       }
     } catch (err: any) {
       mongoConnectingPromise = null;
-      console.warn('MongoDB connection note (using fallback local storage):', err?.message || err);
-      return { isConnected: false, type: 'fallback_storage' };
+      lastMongoError = err?.message || String(err);
+      console.error('❌ MongoDB connection error:', lastMongoError);
+      return { isConnected: false, type: 'fallback_storage', error: lastMongoError };
     }
+  } else {
+    lastMongoError = 'MONGODB_URI environment variable is missing or empty in Vercel settings';
   }
 
-  return { isConnected: (mongoose.connection.readyState as number) === 1, type: 'fallback_storage' };
+  return {
+    isConnected: (mongoose.connection.readyState as number) === 1,
+    type: 'fallback_storage',
+    error: lastMongoError || undefined,
+  };
 }
 
 export const dbService = {
   isMongo: () => (mongoose.connection.readyState as number) === 1,
+  getLastError: () => lastMongoError,
 
   // User operations
   async findUserByEmail(email: string): Promise<any | null> {

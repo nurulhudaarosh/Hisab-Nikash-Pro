@@ -53,10 +53,9 @@ export const authService = {
     const cleanName = name.trim();
 
     if (!cleanName || !cleanEmail || !pass) {
-      throw new Error('Please provide name, email, and password');
+      throw new Error('Please provide name, email, and password / নাম, ইমেইল এবং পাসওয়ার্ড আবশ্যক');
     }
 
-    // 1. First attempt Cloud Server API
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -68,24 +67,21 @@ export const authService = {
       let data: any = null;
       if (contentType.includes('application/json')) {
         data = await res.json().catch(() => null);
+      } else {
+        const text = await res.text().catch(() => '');
+        if (text) {
+          try {
+            data = JSON.parse(text);
+          } catch {
+            // text response
+          }
+        }
       }
 
       if (res.ok && data?.user && data?.token) {
-        // Cache user locally for offline use
-        const users = getLocalUsers();
-        users[cleanEmail] = {
-          id: data.user.id,
-          email: cleanEmail,
-          name: cleanName,
-          passwordHash: simpleHash(pass),
-          createdAt: new Date().toISOString(),
-        };
-        saveLocalUsers(users);
-
         return { user: data.user, token: data.token, isCloud: true };
       } else {
-        // Server returned an error (e.g., 400, 409, 500)
-        const errorMsg = data?.error || `Registration failed (HTTP ${res.status})`;
+        const errorMsg = data?.error || `Registration failed (HTTP ${res.status}). Please verify MongoDB connection.`;
         throw new Error(errorMsg);
       }
     } catch (err: any) {
@@ -95,48 +91,20 @@ export const authService = {
         err.message?.includes('NetworkError') ||
         err.message?.includes('Load failed');
 
-      // If it's a real server error (duplicate email, validation, etc.), throw it to inform user
-      if (!isNetworkError) {
-        throw err;
+      if (isNetworkError) {
+        throw new Error('Could not connect to the cloud server / সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না। অনুগ্রহ করে ইন্টারনেট কানেকশন বা Vercel ডেটাবেজ সেটিংস চেক করুন।');
       }
-      console.warn('Server unavailable, attempting offline registration fallback:', err);
+      throw err;
     }
-
-    // 2. Offline-First Local Registration Fallback (Only when internet/network is strictly disconnected)
-    const localUsers = getLocalUsers();
-    if (localUsers[cleanEmail]) {
-      throw new Error('An account with this email already exists locally. Please sign in.');
-    }
-
-    const userId = generateDeterministicUserId(cleanEmail);
-    const token = 'tok_offline_' + Math.random().toString(36).substring(2, 15);
-
-    const newRecord: LocalUserRecord = {
-      id: userId,
-      email: cleanEmail,
-      name: cleanName,
-      passwordHash: simpleHash(pass),
-      createdAt: new Date().toISOString(),
-    };
-
-    localUsers[cleanEmail] = newRecord;
-    saveLocalUsers(localUsers);
-
-    return {
-      user: { id: userId, email: cleanEmail, name: cleanName, token },
-      token,
-      isCloud: false,
-    };
   },
 
   async login(email: string, pass: string): Promise<{ user: UserProfile; token: string; isCloud: boolean }> {
     const cleanEmail = email.trim().toLowerCase();
 
     if (!cleanEmail || !pass) {
-      throw new Error('Email and password are required');
+      throw new Error('Email and password are required / ইমেইল এবং পাসওয়ার্ড আবশ্যক');
     }
 
-    // 1. First attempt Cloud Server API
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -148,23 +116,21 @@ export const authService = {
       let data: any = null;
       if (contentType.includes('application/json')) {
         data = await res.json().catch(() => null);
+      } else {
+        const text = await res.text().catch(() => '');
+        if (text) {
+          try {
+            data = JSON.parse(text);
+          } catch {
+            // text response
+          }
+        }
       }
 
       if (res.ok && data?.user && data?.token) {
-        // Cache user locally
-        const users = getLocalUsers();
-        users[cleanEmail] = {
-          id: data.user.id,
-          email: cleanEmail,
-          name: data.user.name || cleanEmail.split('@')[0],
-          passwordHash: simpleHash(pass),
-          createdAt: new Date().toISOString(),
-        };
-        saveLocalUsers(users);
-
         return { user: data.user, token: data.token, isCloud: true };
       } else {
-        const errorMsg = data?.error || `Sign in failed (HTTP ${res.status})`;
+        const errorMsg = data?.error || `Sign in failed (HTTP ${res.status}). Please check credentials or MongoDB connection.`;
         throw new Error(errorMsg);
       }
     } catch (err: any) {
@@ -174,28 +140,10 @@ export const authService = {
         err.message?.includes('NetworkError') ||
         err.message?.includes('Load failed');
 
-      if (!isNetworkError) {
-        throw err;
+      if (isNetworkError) {
+        throw new Error('Could not connect to cloud authentication server / ক্লাউড সার্ভারের সাথে কানেক্ট করা যাচ্ছে না। ইন্টারনেট কানেকশন চেক করুন।');
       }
-      console.warn('Server unavailable, attempting offline login check:', err);
+      throw err;
     }
-
-    // 2. Offline-First Local Login Fallback
-    const localUsers = getLocalUsers();
-    const existing = localUsers[cleanEmail];
-
-    if (existing) {
-      if (existing.passwordHash !== simpleHash(pass)) {
-        throw new Error('Invalid email or password / ভুল ইমেইল বা পাসওয়ার্ড');
-      }
-      const token = 'tok_offline_' + Math.random().toString(36).substring(2, 15);
-      return {
-        user: { id: existing.id, email: existing.email, name: existing.name, token },
-        token,
-        isCloud: false,
-      };
-    }
-
-    throw new Error('User not found on this device and cloud server is offline. Please check your network connection.');
   },
 };

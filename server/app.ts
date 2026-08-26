@@ -26,12 +26,10 @@ app.use((req, res, next) => {
 
 // Middleware to ensure DB connection is ready on serverless / Vercel
 app.use(async (req, res, next) => {
-  if (req.path.startsWith("/api")) {
-    try {
-      await initDatabase();
-    } catch (e) {
-      console.warn("DB init warning:", e);
-    }
+  try {
+    await initDatabase();
+  } catch (e) {
+    console.warn("DB init warning:", e);
   }
   next();
 });
@@ -81,30 +79,50 @@ export const optionalAuth = (req: AuthRequest, res: Response, next: NextFunction
   next();
 };
 
-// --- AUTH API ROUTES ---
+const apiRouter = express.Router();
 
 // Health & Status
-app.get("/api/health", (req, res) => {
+apiRouter.get("/health", (req, res) => {
   res.json({
     status: "ok",
     appName: "Hisab",
     time: new Date().toISOString(),
     isMongo: dbService.isMongo(),
+    mongoError: dbService.getLastError(),
+  });
+});
+
+apiRouter.get("/status", (req, res) => {
+  res.json({
+    status: "ok",
+    appName: "Hisab",
+    time: new Date().toISOString(),
+    isMongo: dbService.isMongo(),
+    mongoError: dbService.getLastError(),
   });
 });
 
 // User Registration
-app.post("/api/auth/register", async (req, res) => {
+apiRouter.post("/auth/register", async (req, res) => {
   try {
+    await initDatabase();
+
     const { email, password, name } = req.body;
     if (!email || !password || !name) {
       return res.status(400).json({ error: "Name, email, and password are required" });
     }
 
+    if (!dbService.isMongo()) {
+      const errDetail = dbService.getLastError();
+      return res.status(503).json({
+        error: `Cloud database is not connected on Vercel. Please configure MONGODB_URI in Vercel Environment Variables and ensure MongoDB Atlas IP Access is set to 0.0.0.0/0. Details: ${errDetail || 'No active connection'}`,
+      });
+    }
+
     const cleanEmail = String(email).trim().toLowerCase();
     const existing = await dbService.findUserByEmail(cleanEmail);
     if (existing) {
-      return res.status(409).json({ error: "An account with this email already exists" });
+      return res.status(409).json({ error: "An account with this email already exists. Please Sign In." });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -127,28 +145,37 @@ app.post("/api/auth/register", async (req, res) => {
     });
   } catch (err: any) {
     console.error("Register error:", err);
-    return res.status(500).json({ error: "Failed to register user: " + err.message });
+    return res.status(500).json({ error: "Failed to register user: " + (err.message || String(err)) });
   }
 });
 
 // User Login
-app.post("/api/auth/login", async (req, res) => {
+apiRouter.post("/auth/login", async (req, res) => {
   try {
+    await initDatabase();
+
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
+    }
+
+    if (!dbService.isMongo()) {
+      const errDetail = dbService.getLastError();
+      return res.status(503).json({
+        error: `Cloud database is not connected on Vercel. Please check MONGODB_URI in Vercel Environment Variables. Details: ${errDetail || 'No active connection'}`,
+      });
     }
 
     const cleanEmail = String(email).trim().toLowerCase();
     const user = await dbService.findUserByEmail(cleanEmail);
     
     if (!user) {
-      return res.status(401).json({ error: "No account found with this email. Please click 'Create Account' to register." });
+      return res.status(401).json({ error: "No account found with this email in the database. Please click 'Create Account' to register." });
     }
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
-      return res.status(401).json({ error: "Invalid email or password / ভুল ইমেইল বা পাসওয়ার্ড" });
+      return res.status(401).json({ error: "Invalid password / ভুল পাসওয়ার্ড। অনুগ্রহ করে সঠিক পাসওয়ার্ড দিন।" });
     }
 
     const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: "90d" });
@@ -160,12 +187,12 @@ app.post("/api/auth/login", async (req, res) => {
     });
   } catch (err: any) {
     console.error("Login error:", err);
-    return res.status(500).json({ error: "Failed to sign in: " + err.message });
+    return res.status(500).json({ error: "Failed to sign in: " + (err.message || String(err)) });
   }
 });
 
 // Get Current User Profile
-app.get("/api/auth/me", requireAuth, async (req: AuthRequest, res) => {
+apiRouter.get("/auth/me", requireAuth, async (req: AuthRequest, res) => {
   try {
     const user = await dbService.findUserById(req.userId!);
     if (!user) {
@@ -180,7 +207,7 @@ app.get("/api/auth/me", requireAuth, async (req: AuthRequest, res) => {
 });
 
 // Sync Status & Ping
-app.get("/api/sync/status", optionalAuth, async (req: AuthRequest, res) => {
+apiRouter.get("/sync/status", optionalAuth, async (req: AuthRequest, res) => {
   return res.json({
     status: "ok",
     userId: req.userId,
@@ -193,7 +220,7 @@ app.get("/api/sync/status", optionalAuth, async (req: AuthRequest, res) => {
 // --- SYNC API ROUTES (IDEMPOTENT & ROBUST) ---
 
 // 1. Batch Push (Transactions + Ledgers + Settings)
-app.post("/api/sync/push", optionalAuth, async (req: AuthRequest, res) => {
+apiRouter.post("/sync/push", optionalAuth, async (req: AuthRequest, res) => {
   try {
     const userId = req.userId!;
     const { transactions = [], ledgers = [], settings } = req.body;
@@ -222,7 +249,7 @@ app.post("/api/sync/push", optionalAuth, async (req: AuthRequest, res) => {
 });
 
 // 2. Individual Sync Endpoint for Transactions
-app.post("/api/sync/transactions", optionalAuth, async (req: AuthRequest, res) => {
+apiRouter.post("/sync/transactions", optionalAuth, async (req: AuthRequest, res) => {
   try {
     const userId = req.userId!;
     const { transactions = [] } = req.body;
@@ -234,7 +261,7 @@ app.post("/api/sync/transactions", optionalAuth, async (req: AuthRequest, res) =
 });
 
 // 3. Individual Sync Endpoint for Ledgers
-app.post("/api/sync/ledgers", optionalAuth, async (req: AuthRequest, res) => {
+apiRouter.post("/sync/ledgers", optionalAuth, async (req: AuthRequest, res) => {
   try {
     const userId = req.userId!;
     const { ledgers = [] } = req.body;
@@ -246,7 +273,7 @@ app.post("/api/sync/ledgers", optionalAuth, async (req: AuthRequest, res) => {
 });
 
 // 4. Batch Pull (Get updates from Cloud since timestamp)
-app.post("/api/sync/pull", optionalAuth, async (req: AuthRequest, res) => {
+apiRouter.post("/sync/pull", optionalAuth, async (req: AuthRequest, res) => {
   try {
     const userId = req.userId!;
     const { since } = req.body;
@@ -269,7 +296,7 @@ app.post("/api/sync/pull", optionalAuth, async (req: AuthRequest, res) => {
 });
 
 // 5. Update / Fetch Settings
-app.post("/api/sync/settings", optionalAuth, async (req: AuthRequest, res) => {
+apiRouter.post("/sync/settings", optionalAuth, async (req: AuthRequest, res) => {
   try {
     const userId = req.userId!;
     const settings = await dbService.upsertSettings(userId, req.body);
@@ -278,5 +305,9 @@ app.post("/api/sync/settings", optionalAuth, async (req: AuthRequest, res) => {
     return res.status(500).json({ error: err.message });
   }
 });
+
+// Mount router on BOTH "/api" and "/" so Vercel rewrites and standard Express work seamlessly
+app.use("/api", apiRouter);
+app.use("/", apiRouter);
 
 export default app;
